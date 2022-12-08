@@ -419,9 +419,9 @@ func separatorStage(left interface{}, right interface{}, parameters Parameters) 
 }
 
 func inStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
-
 	for _, value := range right.([]interface{}) {
-		if left == value {
+		//统一转换为string再进行比较
+		if fmt.Sprintf("%v", left) == fmt.Sprintf("%v", value) {
 			return true, nil
 		}
 	}

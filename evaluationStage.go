@@ -135,7 +135,24 @@ func ltStage(left interface{}, right interface{}, parameters Parameters) (interf
 	return boolIface(left.(float64) < right.(float64)), nil
 }
 func equalStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
+	//兼容 "True" == "true", "False" == "false" 的形式
+	//modified by yorkershi
+	if leftv := _getBoolStr(left); len(leftv) > 0 {
+		if rightv := _getBoolStr(right); len(rightv) > 0 {
+			left = leftv
+			right = rightv
+		}
+	}
 	return boolIface(reflect.DeepEqual(left, right)), nil
+}
+func _getBoolStr(data any) string {
+	if v, ok := data.(string); ok {
+		v = strings.ToLower(v)
+		if v == "true" || v == "false" {
+			return v
+		}
+	}
+	return ""
 }
 func notEqualStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
 	return boolIface(!reflect.DeepEqual(left, right)), nil

@@ -6,6 +6,7 @@ import (
 	"math"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -111,29 +112,70 @@ func modulusStage(left interface{}, right interface{}, parameters Parameters) (i
 	return math.Mod(left.(float64), right.(float64)), nil
 }
 func gteStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
+	var err error
+	left, right, err = _uniformDataType(left, right)
+	if err != nil {
+		return nil, err
+	}
 	if isString(left) && isString(right) {
 		return boolIface(left.(string) >= right.(string)), nil
 	}
 	return boolIface(left.(float64) >= right.(float64)), nil
 }
 func gtStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
+	var err error
+	left, right, err = _uniformDataType(left, right)
+	if err != nil {
+		return nil, err
+	}
 	if isString(left) && isString(right) {
 		return boolIface(left.(string) > right.(string)), nil
 	}
 	return boolIface(left.(float64) > right.(float64)), nil
 }
 func lteStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
+	var err error
+	left, right, err = _uniformDataType(left, right)
+	if err != nil {
+		return nil, err
+	}
 	if isString(left) && isString(right) {
 		return boolIface(left.(string) <= right.(string)), nil
 	}
 	return boolIface(left.(float64) <= right.(float64)), nil
 }
 func ltStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
+	var err error
+	left, right, err = _uniformDataType(left, right)
+	if err != nil {
+		return nil, err
+	}
 	if isString(left) && isString(right) {
 		return boolIface(left.(string) < right.(string)), nil
 	}
 	return boolIface(left.(float64) < right.(float64)), nil
 }
+
+//尝试统一化数据类型，比如 left="123", right=123 时，将left转换为123
+func _uniformDataType(left, right any) (rLeft any, rRight any, err error) {
+	if (isString(left) && isString(right)) || (isFloat64(left) && isFloat64(right)) {
+		return left, right, nil
+	}
+	//到此，说明一个值为string, 一个值为 float, 尝试将string转换为float
+	if isString(left) {
+		left, err = strconv.ParseFloat(fmt.Sprintf("%v", left), 64)
+		if err != nil {
+			return left, right, err
+		}
+	} else if isString(right) {
+		right, err = strconv.ParseFloat(fmt.Sprintf("%v", right), 64)
+		if err != nil {
+			return left, right, err
+		}
+	}
+	return left, right, nil
+}
+
 func equalStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
 	//兼容 "True" == "true", "False" == "false" 的形式
 	//modified by yorkershi
@@ -143,6 +185,14 @@ func equalStage(left interface{}, right interface{}, parameters Parameters) (int
 			right = rightv
 		}
 	}
+
+	//弱类型兼容
+	var err error
+	left, right, err = _uniformDataType(left, right)
+	if err != nil {
+		return nil, err
+	}
+
 	return boolIface(reflect.DeepEqual(left, right)), nil
 }
 func _getBoolStr(data any) string {
@@ -488,7 +538,6 @@ func isFloat64(value interface{}) bool {
 	String concat needs one (or both) of the sides to be a string.
 */
 func additionTypeCheck(left interface{}, right interface{}) bool {
-
 	if isFloat64(left) && isFloat64(right) {
 		return true
 	}
@@ -503,13 +552,25 @@ func additionTypeCheck(left interface{}, right interface{}) bool {
 	but never between the two.
 */
 func comparatorTypeCheck(left interface{}, right interface{}) bool {
-
 	if isFloat64(left) && isFloat64(right) {
 		return true
 	}
 	if isString(left) && isString(right) {
 		return true
 	}
+
+	//针对类似 left为 "123", right为 123 的情况，字符串可以正常转换为 float64时，也允许通过检测
+	if isFloat64(left) && isString(right) {
+		if _, err := strconv.ParseFloat(fmt.Sprintf("%v", right), 64); err == nil {
+			return true
+		}
+	}
+	if isFloat64(right) && isString(left) {
+		if _, err := strconv.ParseFloat(fmt.Sprintf("%v", left), 64); err == nil {
+			return true
+		}
+	}
+
 	return false
 }
 

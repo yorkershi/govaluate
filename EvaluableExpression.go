@@ -129,7 +129,6 @@ func NewEvaluableExpressionWithFunctions(expression string, functions map[string
 	Same as `Eval`, but automatically wraps a map of parameters into a `govalute.Parameters` structure.
 */
 func (this EvaluableExpression) Evaluate(parameters map[string]interface{}) (interface{}, error) {
-
 	if parameters == nil {
 		return this.Eval(nil)
 	}
@@ -149,7 +148,6 @@ func (this EvaluableExpression) Evaluate(parameters map[string]interface{}) (int
 	e.g., if the expression is "foo + 1" and parameters contains "foo" = 2, this will return 3.0
 */
 func (this EvaluableExpression) Eval(parameters Parameters) (interface{}, error) {
-
 	if this.evaluationStages == nil {
 		return nil, nil
 	}

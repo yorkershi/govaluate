@@ -52,6 +52,42 @@ func TestEvaluableExpression_Evaluate(t *testing.T) {
 			want:    true,
 			wantErr: false,
 		},
+		{
+			name: "test-4",
+			args: args{
+				expression: `port_num  <= cache_AMOUNT_0_Member_of_Agg_Port`,
+				parameters: map[string]any{
+					"cache_AMOUNT_0_Member_of_Agg_Port": "14",
+					"port_num":                          14,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-5",
+			args: args{
+				expression: `port_num  <= cache_AMOUNT_0_Member_of_Agg_Port`,
+				parameters: map[string]any{
+					"cache_AMOUNT_0_Member_of_Agg_Port": "19",
+					"port_num":                          14,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-6",
+			args: args{
+				expression: `a == b`,
+				parameters: map[string]any{
+					"a": "19",
+					"b": 19,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

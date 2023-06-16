@@ -156,24 +156,90 @@ func ltStage(left interface{}, right interface{}, parameters Parameters) (interf
 	return boolIface(left.(float64) < right.(float64)), nil
 }
 
-//尝试统一化数据类型，比如 left="123", right=123 时，将left转换为123
+// 尝试统一化数据类型，比如 left="123", right=123 时，将left转换为123
+// @modified yorkershi
 func _uniformDataType(left, right any) (rLeft any, rRight any, err error) {
+	//1. 如果已经同时为 string 或 float64 类型，直接返回
 	if (isString(left) && isString(right)) || (isFloat64(left) && isFloat64(right)) {
 		return left, right, nil
 	}
-	//到此，说明一个值为string, 一个值为 float, 尝试将string转换为float
-	if isString(left) {
-		left, err = strconv.ParseFloat(fmt.Sprintf("%v", left), 64)
-		if err != nil {
-			return left, right, err
+
+	//2. 如果同时为数值类型，则统一转换为 float64 返回
+	if v1, ok1 := _tryNumericToFloat64(left); ok1 {
+		if v2, ok2 := _tryNumericToFloat64(right); ok2 {
+			return v1, v2, nil
 		}
-	} else if isString(right) {
-		right, err = strconv.ParseFloat(fmt.Sprintf("%v", right), 64)
-		if err != nil {
-			return left, right, err
+	}
+
+	//3. 如果一边为string, 另一边为数值类型，则先尝试将string转换为float64，如果不能转换，则将数值类型转换为string
+	if isString(left) {
+		if v, ok := _tryNumericToFloat64(right); ok {
+			rLeft, rRight = _assignType(left.(string), v)
+			return rLeft, rRight, nil
+		}
+	}
+	if isString(right) {
+		if v, ok := _tryNumericToFloat64(left); ok {
+			rRight, rLeft = _assignType(right.(string), v)
+			return rLeft, rRight, nil
 		}
 	}
 	return left, right, nil
+}
+
+// 是否所以传入的数据均为数值类型
+func _tryNumericToFloat64(data any) (f float64, isSuccess bool) {
+	if v, ok := data.(int); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(uint); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(int8); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(uint8); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(int16); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(uint16); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(int32); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(uint32); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(int64); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(uint64); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(float32); ok {
+		return float64(v), true
+	}
+	if v, ok := data.(float64); ok {
+		return v, true
+	}
+	return 0, false
+
+}
+
+// 类型对齐
+// 则先尝试将string转换为float64，如果不能转换，则将数值类型转换为string
+// 返回相同的数据类型
+func _assignType(s string, f float64) (any, any) {
+	if sf, err := strconv.ParseFloat(s, 64); err == nil {
+		//成功转换时
+		return sf, f
+	} else {
+		//无法转换时
+		return s, fmt.Sprintf("%v", f)
+	}
 }
 
 func equalStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
@@ -298,9 +364,7 @@ func makeLiteralStage(literal interface{}) evaluationOperator {
 }
 
 func makeFunctionStage(function ExpressionFunction) evaluationOperator {
-
 	return func(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
-
 		if right == nil {
 			return function()
 		}
@@ -534,8 +598,8 @@ func isFloat64(value interface{}) bool {
 }
 
 /*
-	Addition usually means between numbers, but can also mean string concat.
-	String concat needs one (or both) of the sides to be a string.
+Addition usually means between numbers, but can also mean string concat.
+String concat needs one (or both) of the sides to be a string.
 */
 func additionTypeCheck(left interface{}, right interface{}) bool {
 	if isFloat64(left) && isFloat64(right) {
@@ -548,8 +612,8 @@ func additionTypeCheck(left interface{}, right interface{}) bool {
 }
 
 /*
-	Comparison can either be between numbers, or lexicographic between two strings,
-	but never between the two.
+Comparison can either be between numbers, or lexicographic between two strings,
+but never between the two.
 */
 func comparatorTypeCheck(left interface{}, right interface{}) bool {
 	if isFloat64(left) && isFloat64(right) {
@@ -583,8 +647,8 @@ func isArray(value interface{}) bool {
 }
 
 /*
-	Converting a boolean to an interface{} requires an allocation.
-	We can use interned bools to avoid this cost.
+Converting a boolean to an interface{} requires an allocation.
+We can use interned bools to avoid this cost.
 */
 func boolIface(b bool) interface{} {
 	if b {

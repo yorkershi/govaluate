@@ -88,6 +88,39 @@ func TestEvaluableExpression_Evaluate(t *testing.T) {
 			want:    true,
 			wantErr: false,
 		},
+		{
+			name: "test-7",
+			args: args{
+				expression: `!a == true`,
+				parameters: map[string]any{
+					"a": false,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-8",
+			args: args{
+				expression: `[a.b] == 4`,
+				parameters: map[string]any{
+					"a.b": 4,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-9",
+			args: args{
+				expression: `!a`,
+				parameters: map[string]any{
+					"a": false,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

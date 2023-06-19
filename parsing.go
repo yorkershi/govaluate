@@ -26,7 +26,6 @@ func parseTokens(expression string, functions map[string]ExpressionFunction) ([]
 	for stream.canRead() {
 
 		token, err, found = readToken(stream, state, functions)
-
 		if err != nil {
 			return ret, err
 		}
@@ -140,9 +139,7 @@ func readToken(stream *lexerStream, state lexerState, functions map[string]Expre
 
 		// regular variable - or function?
 		if unicode.IsLetter(character) {
-
 			tokenString = readTokenUntilFalse(stream, isVariableName)
-
 			tokenValue = tokenString
 			kind = VARIABLE
 
@@ -172,18 +169,21 @@ func readToken(stream *lexerStream, state lexerState, functions map[string]Expre
 			//modified by yorkershi
 			//这里考虑支持函数名也可以作为变量名的情况，如果是函数的形式，必须跟左括号`(`进行区分，如 index(vlist, 0)，否则，认为
 			//是变量名
-			if stream.canRead() {
-				//判断后一个字符是否为左括号 (，这里暂不支持函数名和(之间还存在空格的情况
-				nextCh := stream.readCharacter()
-				stream.rewind(1) //回滚一个字符
-				if nextCh == '(' {
-					function, found = functions[tokenString]
-					if found {
-						kind = FUNCTION
-						tokenValue = function
-					}
+			//判断后一个有效字符是否为左括号
+			if _isNextLeftBracket(stream) {
+				function, found = functions[tokenString]
+				if found {
+					kind = FUNCTION
+					tokenValue = function
 				}
 			}
+
+			//以下为被替换的原有代码
+			//function, found = functions[tokenString]
+			//if found {
+			//	kind = FUNCTION
+			//	tokenValue = function
+			//}
 
 			// accessor?
 			accessorIndex := strings.Index(tokenString, ".")
@@ -296,6 +296,25 @@ func readToken(stream *lexerStream, state lexerState, functions map[string]Expre
 	ret.Value = tokenValue
 
 	return ret, nil, (kind != UNKNOWN)
+}
+
+// 判断下一个有效字符是否为左括号
+func _isNextLeftBracket(stream *lexerStream) bool {
+	move := 0
+	isHit := false
+	for stream.canRead() {
+		nextCh := stream.readCharacter()
+		move++
+		if unicode.IsSpace(nextCh) {
+			continue
+		}
+		if nextCh == '(' {
+			isHit = true
+		}
+		break
+	}
+	stream.rewind(move)
+	return isHit
 }
 
 func readTokenUntilFalse(stream *lexerStream, condition func(rune) bool) string {

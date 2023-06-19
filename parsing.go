@@ -169,10 +169,20 @@ func readToken(stream *lexerStream, state lexerState, functions map[string]Expre
 			}
 
 			// function?
-			function, found = functions[tokenString]
-			if found {
-				kind = FUNCTION
-				tokenValue = function
+			//modified by yorkershi
+			//这里考虑支持函数名也可以作为变量名的情况，如果是函数的形式，必须跟左括号`(`进行区分，如 index(vlist, 0)，否则，认为
+			//是变量名
+			if stream.canRead() {
+				//判断后一个字符是否为左括号 (，这里暂不支持函数名和(之间还存在空格的情况
+				nextCh := stream.readCharacter()
+				stream.rewind(1) //回滚一个字符
+				if nextCh == '(' {
+					function, found = functions[tokenString]
+					if found {
+						kind = FUNCTION
+						tokenValue = function
+					}
+				}
 			}
 
 			// accessor?
@@ -298,8 +308,8 @@ func readTokenUntilFalse(stream *lexerStream, condition func(rune) bool) string 
 }
 
 /*
-	Returns the string that was read until the given [condition] was false, or whitespace was broken.
-	Returns false if the stream ended before whitespace was broken or condition was met.
+Returns the string that was read until the given [condition] was false, or whitespace was broken.
+Returns false if the stream ended before whitespace was broken or condition was met.
 */
 func readUntilFalse(stream *lexerStream, includeWhitespace bool, breakWhitespace bool, allowEscaping bool, condition func(rune) bool) (string, bool) {
 
@@ -345,8 +355,8 @@ func readUntilFalse(stream *lexerStream, includeWhitespace bool, breakWhitespace
 }
 
 /*
-	Checks to see if any optimizations can be performed on the given [tokens], which form a complete, valid expression.
-	The returns slice will represent the optimized (or unmodified) list of tokens to use.
+Checks to see if any optimizations can be performed on the given [tokens], which form a complete, valid expression.
+The returns slice will represent the optimized (or unmodified) list of tokens to use.
 */
 func optimizeTokens(tokens []ExpressionToken) ([]ExpressionToken, error) {
 
@@ -385,7 +395,7 @@ func optimizeTokens(tokens []ExpressionToken) ([]ExpressionToken, error) {
 }
 
 /*
-	Checks the balance of tokens which have multiple parts, such as parenthesis.
+Checks the balance of tokens which have multiple parts, such as parenthesis.
 */
 func checkBalance(tokens []ExpressionToken) error {
 
@@ -466,9 +476,9 @@ func isNotClosingBracket(character rune) bool {
 }
 
 /*
-	Attempts to parse the [candidate] as a Time.
-	Tries a series of standardized date formats, returns the Time if one applies,
-	otherwise returns false through the second return.
+Attempts to parse the [candidate] as a Time.
+Tries a series of standardized date formats, returns the Time if one applies,
+otherwise returns false through the second return.
 */
 func tryParseTime(candidate string) (time.Time, bool) {
 

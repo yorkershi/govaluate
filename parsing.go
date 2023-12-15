@@ -486,7 +486,8 @@ func isVariableName(character rune) bool {
 	return unicode.IsLetter(character) ||
 		unicode.IsDigit(character) ||
 		character == '_' ||
-		character == '.'
+		character == '.' ||
+		character == '？' //增加全角 ？为变量范围内，modified by yorkershi
 }
 
 func isNotClosingBracket(character rune) bool {

@@ -369,9 +369,22 @@ func makeFunctionStage(function ExpressionFunction) evaluationOperator {
 			return function()
 		}
 
+		needSingleParameter := false
+		for k, v := range customFunctions {
+			if reflect.ValueOf(v).Pointer() == reflect.ValueOf(function).Pointer() {
+				if _, ok := singleParamFuncNames[k]; ok {
+					needSingleParameter = true
+				}
+			}
+		}
+
 		switch right.(type) {
 		case []interface{}:
-			return function(right.([]interface{})...)
+			if needSingleParameter {
+				return function(right)
+			} else {
+				return function(right.([]interface{})...)
+			}
 		default:
 			return function(right)
 		}

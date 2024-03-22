@@ -184,6 +184,14 @@ func _uniformDataType(left, right any) (rLeft any, rRight any, err error) {
 			return rLeft, rRight, nil
 		}
 	}
+
+	//4. 如果一条为bool类型，另一边为string类型时，尝试将bool类型转换为string类型返回
+	if isBool(left) && isString(right) {
+		return strconv.FormatBool(left.(bool)), right, nil
+	} else if isString(left) && isBool(right) {
+		return left, strconv.FormatBool(right.(bool)), nil
+	}
+
 	return left, right, nil
 }
 

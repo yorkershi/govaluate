@@ -387,11 +387,23 @@ func makeFunctionStage(function ExpressionFunction) evaluationOperator {
 		}
 
 		switch right.(type) {
-		case []interface{}:
+		case []any:
 			if needSingleParameter {
 				return function(right)
 			} else {
-				return function(right.([]interface{})...)
+				args := right.([]any)
+				if len(args) > 0 && fmt.Sprintf("%v", args[0]) == CustomFunctionFirstParamPlaceholder {
+					//移除第一个参数
+					tmp := make([]any, 0)
+					for i, v := range args {
+						if i == 0 {
+							continue
+						}
+						tmp = append(tmp, v)
+					}
+					args = tmp
+				}
+				return function(args...)
 			}
 		default:
 			return function(right)
@@ -562,6 +574,9 @@ func separatorStage(left interface{}, right interface{}, parameters Parameters) 
 
 	switch left.(type) {
 	case []interface{}:
+		//note by: yorkershi
+		//如果自定义函数传入的第一个参数是一个list，这里的处理逻辑会将list中的元素打散后传给自定义函数，这是不符合预期的！
+		//因此，自定义函数的第一个参数要确保不是一个列表
 		ret = append(left.([]interface{}), right)
 	default:
 		ret = []interface{}{left, right}

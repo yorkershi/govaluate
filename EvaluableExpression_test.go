@@ -1,9 +1,10 @@
-//Package govaluate comment_from_here
-//@author yorkershi
-//@created 2023-01-11
+// Package govaluate comment_from_here
+// @author yorkershi
+// @created 2023-01-11
 package govaluate
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -121,10 +122,64 @@ func TestEvaluableExpression_Evaluate(t *testing.T) {
 			want:    true,
 			wantErr: false,
 		},
+		{
+			name: "test-10",
+			args: args{
+				expression: `mytest("_govalute_fix_cffpp_", a, b, c)`,
+				parameters: map[string]any{
+					"a": []any{1, 2, 3},
+					"b": []any{4, 5, 6},
+					"c": []any{7, 8, 9},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-11",
+			args: args{
+				expression: `mytest(a, b, c)`,
+				parameters: map[string]any{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-12",
+			args: args{
+				expression: `mytest(a)`,
+				parameters: map[string]any{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-13",
+			args: args{
+				expression: `mytest(b, c)`,
+				parameters: map[string]any{
+					"a": 1,
+					"b": 2,
+					"c": []int{1, 2},
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			this, err := NewEvaluableExpressionWithFunctions(tt.args.expression, nil)
+			this, err := NewEvaluableExpressionWithFunctions(tt.args.expression, map[string]ExpressionFunction{
+				"mytest": mytest,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -138,4 +193,12 @@ func TestEvaluableExpression_Evaluate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mytest(args ...any) (any, error) {
+	for i, arg := range args {
+		fmt.Println(i, arg)
+
+	}
+	return true, nil
 }

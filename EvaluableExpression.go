@@ -19,6 +19,8 @@ var customFunctions map[string]ExpressionFunction
 // 单参数函数名列表
 var singleParamFuncNames map[string]struct{}
 
+const CustomFunctionFirstParamPlaceholder = "_govalute_fix_cffpp_"
+
 // SetSingleParamFuncNameList 设置单参数函数名列表
 // 此函数仅被初始化一次，这意味着需要一次性将相关的函数名加载到系统中
 func SetSingleParamFuncNameList(funcList []string) {

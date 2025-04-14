@@ -279,6 +279,13 @@ func _getBoolStr(data any) string {
 	return ""
 }
 func notEqualStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {
+	//新增弱类型兼容
+	//modified by yorkershi
+	var err error
+	left, right, err = _uniformDataType(left, right)
+	if err != nil {
+		return nil, err
+	}
 	return boolIface(!reflect.DeepEqual(left, right)), nil
 }
 func andStage(left interface{}, right interface{}, parameters Parameters) (interface{}, error) {

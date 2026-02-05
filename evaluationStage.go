@@ -387,7 +387,7 @@ func makeFunctionStage(function ExpressionFunction) evaluationOperator {
 		needSingleParameter := false
 		for k, v := range customFunctions {
 			if reflect.ValueOf(v).Pointer() == reflect.ValueOf(function).Pointer() {
-				if _, ok := singleParamFuncNames[k]; ok {
+				if isSingleParamFuncName(k) {
 					needSingleParameter = true
 				}
 			}

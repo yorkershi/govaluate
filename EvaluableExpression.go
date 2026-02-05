@@ -3,6 +3,7 @@ package govaluate
 import (
 	"errors"
 	"fmt"
+	"sync"
 )
 
 const isoDateFormat string = "2006-01-02T15:04:05.999999999Z0700"
@@ -19,16 +20,31 @@ var customFunctions map[string]ExpressionFunction
 // 单参数函数名列表
 var singleParamFuncNames map[string]struct{}
 
+// 针对 singleParamFuncNames 操作的读写锁
+var singleParamFuncNamesRw sync.RWMutex
+
 const CustomFunctionFirstParamPlaceholder = "_govalute_fix_cffpp_"
 
 // SetSingleParamFuncNameList 设置单参数函数名列表
 // 此函数仅被初始化一次，这意味着需要一次性将相关的函数名加载到系统中
 func SetSingleParamFuncNameList(funcList []string) {
+	singleParamFuncNamesRw.Lock()
+	defer singleParamFuncNamesRw.Unlock()
 	if len(funcList) > 0 && singleParamFuncNames == nil {
 		singleParamFuncNames = make(map[string]struct{})
 		for _, itm := range funcList {
 			singleParamFuncNames[itm] = struct{}{}
 		}
+	}
+}
+
+func isSingleParamFuncName(name string) bool {
+	singleParamFuncNamesRw.RLock()
+	defer singleParamFuncNamesRw.RUnlock()
+	if _, ok := singleParamFuncNames[name]; ok {
+		return true
+	} else {
+		return false
 	}
 }
 
